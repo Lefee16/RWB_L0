@@ -32,8 +32,8 @@ https://github.com/user-attachments/assets/a4542ead-c463-414e-853e-1eccfd7ff30c
 - **PostgreSQL 16** - реляционная база данных
 - **NATS Streaming** - брокер сообщений для асинхронной обработки
 - **Docker & Docker Compose** - контейнеризация и оркестрация
-- **golang-migrate** - управление миграциями БД
-- **testify** - фреймворк для unit тестирования
+- **Golang-migrate** - управление миграциями БД
+- **Testify** - фреймворк для unit тестирования
 
 **Дополнительные возможности:**
 - Graceful shutdown 
