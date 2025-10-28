@@ -11,9 +11,6 @@ type Publisher struct {
 }
 
 // NewPublisher - создание publisher
-func NewPublisher(client *Client) *Publisher {
-	return &Publisher{client: client}
-}
 
 // Publish - отправка сообщения в канал
 func (p *Publisher) Publish(subject string, data interface{}) error {

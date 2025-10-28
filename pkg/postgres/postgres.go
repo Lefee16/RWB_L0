@@ -44,11 +44,3 @@ func New(cfg *Config) (*sql.DB, error) {
 
 	return db, nil
 }
-
-// Close - закрытие подключения
-func Close(db *sql.DB) error {
-	if db != nil {
-		return db.Close()
-	}
-	return nil
-}

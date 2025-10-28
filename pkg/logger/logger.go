@@ -2,7 +2,6 @@ package logger
 
 import (
 	"log"
-	"os"
 )
 
 // Logger - интерфейс логера
@@ -64,32 +63,4 @@ func (l *SimpleLogger) shouldLog(msgLevel string) bool {
 	messageLevel := levels[msgLevel]
 
 	return messageLevel >= currentLevel
-}
-
-// DefaultLogger - логер по умолчанию для быстрого использования
-var DefaultLogger = &SimpleLogger{level: "info"}
-
-// Info - информационное сообщение через дефолтный логер
-func Info(msg string, args ...interface{}) {
-	DefaultLogger.Info(msg, args...)
-}
-
-// Warn - предупреждение через дефолтный логер
-func Warn(msg string, args ...interface{}) {
-	DefaultLogger.Warn(msg, args...)
-}
-
-// Error - ошибка через дефолтный логер
-func Error(msg string, args ...interface{}) {
-	DefaultLogger.Error(msg, args...)
-}
-
-// Debug - отладка через дефолтный логер
-func Debug(msg string, args ...interface{}) {
-	DefaultLogger.Debug(msg, args...)
-}
-
-// SetOutput - установить куда писать логи
-func SetOutput(file *os.File) {
-	log.SetOutput(file)
 }

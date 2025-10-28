@@ -10,11 +10,6 @@ type Repository struct {
 	db *sql.DB
 }
 
-// New - создание репозитория
-func New(db *sql.DB) *Repository {
-	return &Repository{db: db}
-}
-
 // GetDB - получить подключение к БД
 func (r *Repository) GetDB() *sql.DB {
 	return r.db

@@ -1,4 +1,3 @@
-// Package main - NATS publisher для тестирования
 package main
 
 import (
@@ -66,7 +65,6 @@ type Item struct {
 }
 
 func main() {
-	// Инициализируем логер
 	log := logger.New("info")
 
 	log.Info("Starting NATS Publisher...")

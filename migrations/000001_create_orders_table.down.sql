@@ -1,2 +1,4 @@
--- Откат миграции: удаление таблицы orders
-DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS items CASCADE;
+DROP TABLE IF EXISTS payments CASCADE;
+DROP TABLE IF EXISTS deliveries CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;

@@ -29,6 +29,7 @@ type App struct {
 	natsConsumer *natscontroller.Consumer
 	natsClient   *pkgnats.Client
 	db           *sql.DB
+	cache        *cache.MemoryCache
 }
 
 // New - создание приложения
@@ -42,7 +43,7 @@ func New() (*App, error) {
 	// 2. Инициализируем логер
 	log := logger.New(cfg.Logging.Level)
 	log.Info("Starting Order Service...")
-	log.Info("Configuration loaded: server_port=%d, db_host=%s", cfg.Server.Port, cfg.Database.Host)
+	log.Info("Configuration loaded: server_port=%s, db_host=%s", cfg.Server.Port, cfg.Database.Host)
 
 	return &App{
 		cfg: cfg,
@@ -66,7 +67,10 @@ func (a *App) Run() error {
 
 	// 2. Создаём Use Cases
 	orderRepo := postgres.NewOrderRepository(a.db)
-	orderCache := cache.NewMemoryCache()
+
+	orderCache := cache.NewMemoryCacheWithConfig(a.cfg.Cache.MaxSize, a.cfg.Cache.TTL)
+	a.cache = orderCache
+
 	orderUseCase := usecase.NewOrderUseCase(orderRepo, orderCache)
 
 	// 3. Восстанавливаем кэш из БД
@@ -75,7 +79,7 @@ func (a *App) Run() error {
 		a.log.Warn("Failed to restore cache: %v", err)
 	} else {
 		stats := orderUseCase.GetCacheStats()
-		a.log.Info("Cache restored successfully: %d orders", stats["cached_orders"])
+		a.log.Info("Cache restored successfully: %v orders", stats["cached_orders"])
 	}
 
 	// 4. Инициализируем HTTP сервер
@@ -89,7 +93,7 @@ func (a *App) Run() error {
 
 	// HTTP Server
 	go func() {
-		a.log.Info("Starting HTTP server on %s", a.httpServer.GetAddress())
+		a.log.Info("Starting HTTP server on %s:%s", a.cfg.Server.Host, a.cfg.Server.Port)
 		if err := a.httpServer.Start(); err != nil {
 			errChan <- fmt.Errorf("HTTP server error: %w", err)
 		}
@@ -109,7 +113,7 @@ func (a *App) Run() error {
 
 // initDatabase - инициализация PostgreSQL
 func (a *App) initDatabase() error {
-	a.log.Info("Connecting to PostgreSQL: %s:%d", a.cfg.Database.Host, a.cfg.Database.Port)
+	a.log.Info("Connecting to PostgreSQL: %s:%s", a.cfg.Database.Host, a.cfg.Database.Port)
 
 	db, err := pkgpostgres.New(&pkgpostgres.Config{
 		Host:         a.cfg.Database.Host,
@@ -223,6 +227,12 @@ func (a *App) shutdown() error {
 		if err := a.natsClient.Close(); err != nil {
 			a.log.Error("NATS close error: %v", err)
 		}
+	}
+
+	// Закрываем кэш (останавливаем фоновую очистку)
+	if a.cache != nil {
+		a.log.Info("Closing cache...")
+		a.cache.Close()
 	}
 
 	// Закрываем БД

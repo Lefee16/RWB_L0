@@ -1,20 +1,24 @@
 package v1
 
 import (
+	"errors"
 	"html/template"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
+	"RWB_L0/internal/domain"
 	"RWB_L0/internal/usecase"
+
+	"github.com/go-chi/chi/v5"
 )
 
+// WebHandler обрабатывает HTTP запросы для веб-интерфейса
 type WebHandler struct {
-	orderUseCase *usecase.OrderUseCase
+	orderUseCase usecase.OrderUseCaseInterface
 	templates    *template.Template
 }
 
-func NewWebHandler(orderUseCase *usecase.OrderUseCase) *WebHandler {
+// NewWebHandler создаёт новый экземпляр WebHandler
+func NewWebHandler(orderUseCase usecase.OrderUseCaseInterface) *WebHandler {
 	tmpl := template.Must(template.ParseGlob("web/templates/*.html"))
 
 	return &WebHandler{
@@ -23,6 +27,7 @@ func NewWebHandler(orderUseCase *usecase.OrderUseCase) *WebHandler {
 	}
 }
 
+// IndexPage обрабатывает GET / - главная страница
 func (h *WebHandler) IndexPage(w http.ResponseWriter, r *http.Request) {
 	if err := h.templates.ExecuteTemplate(w, "index.html", nil); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
@@ -30,11 +35,17 @@ func (h *WebHandler) IndexPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// OrderPage обрабатывает GET /orders/:order_uid - страница заказа
 func (h *WebHandler) OrderPage(w http.ResponseWriter, r *http.Request) {
 	orderUID := chi.URLParam(r, "order_uid")
 
-	order, err := h.orderUseCase.GetOrderByID(r.Context(), orderUID)
+	// Используем GetByUID вместо GetOrderByID
+	order, err := h.orderUseCase.GetByUID(r.Context(), orderUID)
 	if err != nil {
+		if errors.Is(err, domain.ErrEmptyOrderUID) {
+			http.Error(w, "Order UID is required", http.StatusBadRequest)
+			return
+		}
 		http.Error(w, "Order not found", http.StatusNotFound)
 		return
 	}

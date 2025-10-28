@@ -137,6 +137,5 @@ func FromDomain(order *domain.Order) *OrderOutput {
 			Status:      item.Status,
 		}
 	}
-
 	return output
 }

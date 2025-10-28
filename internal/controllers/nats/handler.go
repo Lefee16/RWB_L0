@@ -46,7 +46,7 @@ func (h *Handler) HandleOrderCreate(msg *stan.Msg) error {
 	h.log.Info("Processing order: %s", input.OrderUID)
 
 	// Создаём заказ через Use Case
-	if err := h.orderUseCase.CreateOrder(context.Background(), &input); err != nil {
+	if err := h.orderUseCase.Create(context.Background(), &input); err != nil {
 		h.log.Error("Failed to create order %s: %v", input.OrderUID, err)
 		return fmt.Errorf("failed to create order: %w", err)
 	}

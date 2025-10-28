@@ -50,6 +50,8 @@ type NATSConfig struct {
 // CacheConfig - настройки кэша
 type CacheConfig struct {
 	Enabled bool
+	MaxSize int           // ✅ ДОБАВЛЕНО
+	TTL     time.Duration // ✅ ДОБАВЛЕНО
 }
 
 // LoggingConfig - настройки логирования
@@ -88,6 +90,8 @@ func Load() (*Config, error) {
 		},
 		Cache: CacheConfig{
 			Enabled: getEnvAsBool("CACHE_ENABLED", true),
+			MaxSize: getEnvAsInt("CACHE_MAX_SIZE", 1000),                               // ✅ ДОБАВЛЕНО
+			TTL:     time.Duration(getEnvAsInt("CACHE_TTL_MINUTES", 60)) * time.Minute, // ✅ ДОБАВЛЕНО
 		},
 		Logging: LoggingConfig{
 			Level:  getEnv("LOG_LEVEL", "info"),

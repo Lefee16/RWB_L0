@@ -1,8 +1,9 @@
 package http
 
 import (
-	"RWB_L0/internal/controllers/http/v1"
 	"net/http"
+
+	"RWB_L0/internal/controllers/http/v1"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -23,7 +24,7 @@ func NewRouter(orderHandler *v1.OrderHandler, webHandler *v1.WebHandler, mw *Mid
 
 	// API v1
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/orders/{order_uid}", orderHandler.GetOrder)
+		r.Get("/orders/{uid}", orderHandler.GetByUID) // ✅ Исправлено
 		r.Get("/health", orderHandler.HealthCheck)
 	})
 
