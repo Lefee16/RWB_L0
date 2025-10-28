@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Service</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>🛍️ Order Service</h1>
+    <p>Введите Order UID для поиска заказа</p>
+
+    <form id="searchForm" class="search-form">
+        <input
+                type="text"
+                id="orderUID"
+                name="order_uid"
+                placeholder="Например: b563feb7b2b84b6test"
+                required
+        >
+        <button type="submit">Найти заказ</button>
+    </form>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const orderUID = document.getElementById('orderUID').value;
+        window.location.href = '/orders/' + orderUID;
+    });
+</script>
+</body>
+</html>

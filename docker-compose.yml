@@ -1,0 +1,100 @@
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: order-service-postgres
+    environment:
+      POSTGRES_USER: orderuser
+      POSTGRES_PASSWORD: orderpass
+      POSTGRES_DB: orders_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - order-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderuser -d orders_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NATS Streaming
+  nats:
+    image: nats-streaming:latest
+    container_name: order-service-nats
+    command: ["-cid", "test-cluster", "-p", "4222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - order-network
+
+  # Migrations (запускается один раз)
+  migrate:
+    image: migrate/migrate:latest
+    container_name: order-service-migrate
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://orderuser:orderpass@postgres:5432/orders_db?sslmode=disable",
+      "up"
+    ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - order-network
+    restart: on-failure
+
+  # Order Service Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: order-service-app
+    ports:
+      - "8080:8080"
+    environment:
+      # Server
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: orderuser
+      DB_PASSWORD: orderpass
+      DB_NAME: orders_db
+      DB_SSLMODE: disable
+      DB_MAX_OPEN_CONNS: 25
+      DB_MAX_IDLE_CONNS: 5
+
+      # NATS
+      NATS_URL: nats://nats:4222
+      NATS_CLUSTER_ID: test-cluster
+      NATS_CLIENT_ID: order-service-1
+      NATS_SUBJECT: orders
+      NATS_DURABLE_NAME: order-service-durable
+
+      # Logging
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
+    networks:
+      - order-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  order-network:
+    driver: bridge
+

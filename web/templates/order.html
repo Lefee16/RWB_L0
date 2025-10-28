@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказ {{.OrderUID}}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>📦 Заказ: {{.OrderUID}}</h1>
+
+    <div class="back-link">
+        <a href="/">← Вернуться к поиску</a>
+    </div>
+
+    <div class="order-info">
+        <h2>Общая информация</h2>
+        <p><strong>Track Number:</strong> {{.TrackNumber}}</p>
+        <p><strong>Entry:</strong> {{.Entry}}</p>
+        <p><strong>Locale:</strong> {{.Locale}}</p>
+        <p><strong>Customer ID:</strong> {{.CustomerID}}</p>
+        <p><strong>Delivery Service:</strong> {{.DeliveryService}}</p>
+        <p><strong>Дата создания:</strong> {{.DateCreated.Format "02.01.2006 15:04:05"}}</p>
+    </div>
+
+    <div class="delivery-info">
+        <h2>🚚 Доставка</h2>
+        <p><strong>Имя:</strong> {{.Delivery.Name}}</p>
+        <p><strong>Телефон:</strong> {{.Delivery.Phone}}</p>
+        <p><strong>Email:</strong> {{.Delivery.Email}}</p>
+        <p><strong>Адрес:</strong> {{.Delivery.Address}}, {{.Delivery.City}}, {{.Delivery.Zip}}</p>
+        <p><strong>Регион:</strong> {{.Delivery.Region}}</p>
+    </div>
+
+    <div class="payment-info">
+        <h2>💳 Оплата</h2>
+        <p><strong>Transaction:</strong> {{.Payment.Transaction}}</p>
+        <p><strong>Currency:</strong> {{.Payment.Currency}}</p>
+        <p><strong>Provider:</strong> {{.Payment.Provider}}</p>
+        <p><strong>Amount:</strong> {{.Payment.Amount}} {{.Payment.Currency}}</p>
+        <p><strong>Bank:</strong> {{.Payment.Bank}}</p>
+        <p><strong>Delivery Cost:</strong> {{.Payment.DeliveryCost}}</p>
+        <p><strong>Goods Total:</strong> {{.Payment.GoodsTotal}}</p>
+    </div>
+
+    <div class="items-info">
+        <h2>🛒 Товары</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Бренд</th>
+                <th>Размер</th>
+                <th>Цена</th>
+                <th>Скидка</th>
+                <th>Итого</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Items}}
+            <tr>
+                <td>{{.ChrtID}}</td>
+                <td>{{.Name}}</td>
+                <td>{{.Brand}}</td>
+                <td>{{.Size}}</td>
+                <td>{{.Price}}</td>
+                <td>{{.Sale}}%</td>
+                <td>{{.TotalPrice}}</td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
