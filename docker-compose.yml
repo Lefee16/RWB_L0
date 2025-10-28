@@ -1,8 +1,3 @@
-# Docker Compose configuration for RWB_L0 Order Service
-# Version 3.9 with production-ready settings
-# Based on: https://github.com/evrone/go-clean-template
-version: "3.9"
-
 # =============================================================================
 # Shared Environment Variables (DRY principle)
 # =============================================================================
@@ -149,7 +144,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        GO_VERSION: ${GO_VERSION:-1.23}
+        GO_VERSION: ${GO_VERSION:-1.25}
     image: rwb-l0-app:latest
     environment:
       <<: *x-app-environment
