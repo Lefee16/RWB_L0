@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"RWB_L0/internal/domain"
+	"RWB_L0/internal/dto"
 )
 
 // MockRepository - мок репозитория для тестов
@@ -122,7 +123,7 @@ func (m *MockCache) Clear() error {
 
 // Тесты
 
-func TestOrderUseCase_GetOrderByID(t *testing.T) {
+func TestOrderUseCase_GetByUID(t *testing.T) {
 	repo := NewMockRepository()
 	cache := NewMockCache()
 	uc := NewOrderUseCase(repo, cache)
@@ -141,9 +142,9 @@ func TestOrderUseCase_GetOrderByID(t *testing.T) {
 	_ = repo.Save(context.Background(), order)
 
 	// Получаем через use case
-	output, err := uc.GetOrderByID(context.Background(), "test123")
+	output, err := uc.GetByUID(context.Background(), "test123")
 	if err != nil {
-		t.Fatalf("GetOrderByID() error = %v", err)
+		t.Fatalf("GetByUID() error = %v", err)
 	}
 
 	if output.OrderUID != "test123" {
@@ -153,6 +154,23 @@ func TestOrderUseCase_GetOrderByID(t *testing.T) {
 	// Проверяем, что заказ попал в кэш
 	if cache.Count() != 1 {
 		t.Errorf("Expected 1 order in cache, got %d", cache.Count())
+	}
+}
+
+func TestOrderUseCase_GetByUID_EmptyUID(t *testing.T) {
+	repo := NewMockRepository()
+	cache := NewMockCache()
+	uc := NewOrderUseCase(repo, cache)
+
+	// Получаем с пустым UID
+	_, err := uc.GetByUID(context.Background(), "")
+
+	if err == nil {
+		t.Error("Expected error for empty UID, got nil")
+	}
+
+	if !errors.Is(err, domain.ErrEmptyOrderUID) {
+		t.Errorf("Expected ErrEmptyOrderUID, got %v", err)
 	}
 }
 
@@ -180,7 +198,7 @@ func TestOrderUseCase_RestoreCache(t *testing.T) {
 	}
 }
 
-func TestOrderUseCase_GetOrderByID_FromCache(t *testing.T) {
+func TestOrderUseCase_GetByUID_FromCache(t *testing.T) {
 	repo := NewMockRepository()
 	cache := NewMockCache()
 	uc := NewOrderUseCase(repo, cache)
@@ -190,9 +208,9 @@ func TestOrderUseCase_GetOrderByID_FromCache(t *testing.T) {
 	_ = cache.Set("cached123", order)
 
 	// Получаем заказ (должен взять из кэша, не трогая БД)
-	output, err := uc.GetOrderByID(context.Background(), "cached123")
+	output, err := uc.GetByUID(context.Background(), "cached123")
 	if err != nil {
-		t.Fatalf("GetOrderByID() error = %v", err)
+		t.Fatalf("GetByUID() error = %v", err)
 	}
 
 	if output.OrderUID != "cached123" {
@@ -202,5 +220,116 @@ func TestOrderUseCase_GetOrderByID_FromCache(t *testing.T) {
 	// Проверяем, что в БД заказа нет (брали из кэша)
 	if len(repo.orders) != 0 {
 		t.Error("Order should not be in repository")
+	}
+}
+
+func TestOrderUseCase_GetAll(t *testing.T) {
+	repo := NewMockRepository()
+	cache := NewMockCache()
+	uc := NewOrderUseCase(repo, cache)
+
+	// Добавляем заказы
+	order1, _ := domain.NewOrder("order1", "TRACK1", "WBIL")
+	order2, _ := domain.NewOrder("order2", "TRACK2", "WBIL")
+	order3, _ := domain.NewOrder("order3", "TRACK3", "WBIL")
+
+	_ = repo.Save(context.Background(), order1)
+	_ = repo.Save(context.Background(), order2)
+	_ = repo.Save(context.Background(), order3)
+
+	// Получаем все заказы
+	orders, err := uc.GetAll(context.Background())
+	if err != nil {
+		t.Fatalf("GetAll() error = %v", err)
+	}
+
+	if len(orders) != 3 {
+		t.Errorf("Expected 3 orders, got %d", len(orders))
+	}
+}
+
+func TestOrderUseCase_Create(t *testing.T) {
+	repo := NewMockRepository()
+	cache := NewMockCache()
+	uc := NewOrderUseCase(repo, cache)
+
+	// Создаём входной DTO
+	input := &dto.CreateOrderInput{
+		OrderUID:    "new-order-123",
+		TrackNumber: "TRACK-NEW",
+		Entry:       "WBIL",
+		Delivery: dto.DeliveryInput{
+			Name:    "Test User",
+			Phone:   "+79001234567",
+			Zip:     "123456",
+			City:    "Moscow",
+			Address: "Test Street",
+			Region:  "Moscow",
+			Email:   "test@test.com",
+		},
+		Payment: dto.PaymentInput{
+			Transaction:  "TX-NEW",
+			Currency:     "USD",
+			Provider:     "PayPal",
+			Amount:       1000,
+			Bank:         "Sberbank",
+			DeliveryCost: 100,
+			GoodsTotal:   900,
+		},
+		Items: []dto.ItemInput{
+			{
+				ChrtID:      12345,
+				TrackNumber: "TRACK-NEW",
+				Price:       500,
+				Name:        "Test Item",
+				Sale:        10,
+				Size:        "M",
+				TotalPrice:  450,
+				NmID:        54321,
+				Brand:       "Test Brand",
+				Status:      202,
+			},
+		},
+		Locale:          "en",
+		CustomerID:      "customer-1",
+		DeliveryService: "DHL",
+		Shardkey:        "shard-1",
+		SmID:            999,
+	}
+
+	// Создаём заказ
+	err := uc.Create(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	// Проверяем, что заказ в репозитории
+	if len(repo.orders) != 1 {
+		t.Errorf("Expected 1 order in repo, got %d", len(repo.orders))
+	}
+
+	// Проверяем, что заказ в кэше
+	if cache.Count() != 1 {
+		t.Errorf("Expected 1 order in cache, got %d", cache.Count())
+	}
+}
+
+func TestOrderUseCase_GetCacheStats(t *testing.T) {
+	repo := NewMockRepository()
+	cache := NewMockCache()
+	uc := NewOrderUseCase(repo, cache)
+
+	// Добавляем заказы в кэш
+	order1, _ := domain.NewOrder("order1", "TRACK1", "WBIL")
+	order2, _ := domain.NewOrder("order2", "TRACK2", "WBIL")
+
+	_ = cache.Set("order1", order1)
+	_ = cache.Set("order2", order2)
+
+	// Получаем статистику
+	stats := uc.GetCacheStats()
+
+	if stats["cached_orders"] != 2 {
+		t.Errorf("Expected cached_orders = 2, got %v", stats["cached_orders"])
 	}
 }
